@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/pflag"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ type CreateClusterGKEOptions struct {
 	CreateClusterOptions
 
 	Flags CreateClusterGKEFlags
+	flagSet *pflag.FlagSet
 }
 
 type CreateClusterGKEFlags struct {
@@ -99,6 +101,7 @@ func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	}
 
 	options.addCreateClusterFlags(cmd)
+	options.flagSet = cmd.Flags()
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -272,7 +275,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if !o.BatchMode {
-		if !o.Flags.Preemptible {
+		explicit := false
+		explicitlySet := func(f *pflag.Flag) {
+			if f.Name == "preemptible" {
+				explicit = true
+			}
+		}
+		o.flagSet.Visit(explicitlySet)
+		if !explicit {
 			prompt := &survey.Confirm{
 				Message: "Would you like use preemptible VMs?",
 				Default: false,
