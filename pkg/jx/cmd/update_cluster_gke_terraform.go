@@ -32,6 +32,11 @@ type UpdateClusterGKETerraformFlags struct {
 	ServiceAccount string
 }
 
+const (
+	// TODO cmd-refactor
+	optionClusterName = "cluster-name"
+)
+
 var (
 	updateClusterGKETerraformLong = templates.LongDesc(`
 

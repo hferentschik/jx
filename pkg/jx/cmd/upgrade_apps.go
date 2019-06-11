@@ -37,6 +37,9 @@ const (
 	optionHelmUpdate = "helm-update"
 	optionSet        = "set"
 	optionAlias      = "alias"
+	// TODO cmd-refactor
+	optionRelease   = "release"
+	optionNamespace = "namespace"
 )
 
 // UpgradeAppsOptions the options for the create spring command
@@ -98,7 +101,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app [--gitops]")
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "",
 		"The chart version to install [--gitops]")
-	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to [--no-gitops]")
+	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "", "", "The Namespace to promote to [--no-gitops]")
 	cmd.Flags().StringArrayVarP(&o.Set, "set", "s", []string{},
 		"The Helm parameters to pass in while upgrading [--no-gitops]")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
