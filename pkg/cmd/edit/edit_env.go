@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/spf13/cobra"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"

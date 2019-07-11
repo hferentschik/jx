@@ -1,6 +1,7 @@
 package create_test
 
 import (
+	"github.com/jenkins-x/jx/api/tekton"
 	"github.com/jenkins-x/jx/pkg/cmd/create"
 	"io/ioutil"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
 )
@@ -67,7 +67,7 @@ func TestCreateStep(t *testing.T) {
 				},
 				Dir: caseDir,
 				NewStepDetails: create.NewStepDetails{
-					Step: syntax.Step{
+					Step: tekton.Step{
 						Command: tt.sh,
 					},
 					Pipeline:  tt.pipeline,

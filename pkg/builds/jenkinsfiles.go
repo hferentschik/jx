@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	corev1 "k8s.io/api/core/v1"
 )
 

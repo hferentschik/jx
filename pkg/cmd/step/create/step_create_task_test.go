@@ -24,10 +24,10 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"

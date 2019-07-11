@@ -2,6 +2,8 @@ package opts
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,9 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
-	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"

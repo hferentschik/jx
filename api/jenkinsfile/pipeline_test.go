@@ -1,9 +1,9 @@
 package jenkinsfile_test
 
 import (
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/stretchr/testify/assert"
 )
 

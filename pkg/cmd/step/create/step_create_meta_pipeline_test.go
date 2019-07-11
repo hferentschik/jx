@@ -2,7 +2,7 @@ package create
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/stretchr/testify/assert"
 	"reflect"

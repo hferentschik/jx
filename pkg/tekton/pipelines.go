@@ -2,6 +2,7 @@ package tekton
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/tekton"
 	"reflect"
 	"strconv"
 	"time"
@@ -16,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -184,7 +184,7 @@ func GenerateSourceRepoResource(name string, gitInfo *gits.GitRepository, revisi
 
 	resource := &pipelineapi.PipelineResource{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
+			APIVersion: tekton.TektonAPIVersion,
 			Kind:       "PipelineResource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,7 +234,7 @@ func CreatePipelineRun(resources []*pipelineapi.PipelineResource,
 
 	pipelineRun := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
+			APIVersion: tekton.TektonAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -381,7 +381,7 @@ func ApplyPipeline(jxClient versioned.Interface, tektonClient tektonclient.Inter
 	log.Logger().Infof("upserted Pipeline %s", info(pipeline.Name))
 
 	pipelineOwnerReference := metav1.OwnerReference{
-		APIVersion: syntax.TektonAPIVersion,
+		APIVersion: tekton.TektonAPIVersion,
 		Kind:       "pipeline",
 		Name:       pipeline.Name,
 		UID:        pipeline.UID,

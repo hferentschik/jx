@@ -2,6 +2,7 @@ package jenkinsfile
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/tekton"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -70,8 +70,8 @@ type Pipelines struct {
 	Release     *PipelineLifecycles        `json:"release,omitempty"`
 	Feature     *PipelineLifecycles        `json:"feature,omitempty"`
 	Post        *PipelineLifecycle         `json:"post,omitempty"`
-	Overrides   []*syntax.PipelineOverride `json:"overrides,omitempty"`
-	Default     *syntax.ParsedPipeline     `json:"default,omitempty"`
+	Overrides   []*tekton.PipelineOverride `json:"overrides,omitempty"`
+	Default     *tekton.ParsedPipeline     `json:"default,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
@@ -82,15 +82,15 @@ type PipelineLifecycles struct {
 	Build      *PipelineLifecycle     `json:"build,omitempty"`
 	PostBuild  *PipelineLifecycle     `json:"postBuild,omitempty"`
 	Promote    *PipelineLifecycle     `json:"promote,omitempty"`
-	Pipeline   *syntax.ParsedPipeline `json:"pipeline,omitempty"`
+	Pipeline   *tekton.ParsedPipeline `json:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
-	Steps []*syntax.Step `json:"steps,omitempty"`
+	Steps []*tekton.Step `json:"steps,omitempty"`
 
 	// PreSteps if using inheritance then invoke these steps before the base steps
-	PreSteps []*syntax.Step `json:"preSteps,omitempty"`
+	PreSteps []*tekton.Step `json:"preSteps,omitempty"`
 
 	// Replace if using inheritance then replace steps from the base pipeline
 	Replace bool `json:"replace,omitempty"`
@@ -122,7 +122,7 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
 	Extends          *PipelineExtends  `json:"extends,omitempty"`
-	Agent            *syntax.Agent     `json:"agent,omitempty"`
+	Agent            *tekton.Agent     `json:"agent,omitempty"`
 	Env              []corev1.EnvVar   `json:"env,omitempty"`
 	Environment      string            `json:"environment,omitempty"`
 	Pipelines        Pipelines         `json:"pipelines,omitempty"`
@@ -302,7 +302,7 @@ func (l *PipelineLifecycle) RemoveWhenStatements(prow bool) {
 }
 
 // CreateStep creates the given step using the mode
-func (l *PipelineLifecycle) CreateStep(mode string, step *syntax.Step) error {
+func (l *PipelineLifecycle) CreateStep(mode string, step *tekton.Step) error {
 	err := step.Validate()
 	if err != nil {
 		return err
@@ -313,7 +313,7 @@ func (l *PipelineLifecycle) CreateStep(mode string, step *syntax.Step) error {
 	case CreateStepModePost:
 		l.Steps = append(l.Steps, step)
 	case CreateStepModeReplace:
-		l.Steps = []*syntax.Step{step}
+		l.Steps = []*tekton.Step{step}
 		l.Replace = true
 	default:
 		return fmt.Errorf("uknown create mode: %s", mode)
@@ -321,8 +321,8 @@ func (l *PipelineLifecycle) CreateStep(mode string, step *syntax.Step) error {
 	return nil
 }
 
-func removeWhenSteps(prow bool, steps []*syntax.Step) []*syntax.Step {
-	answer := []*syntax.Step{}
+func removeWhenSteps(prow bool, steps []*tekton.Step) []*tekton.Step {
+	answer := []*tekton.Step{}
 	for _, step := range steps {
 		when := strings.TrimSpace(step.When)
 		if prow && when == "!prow" {
@@ -433,18 +433,18 @@ func defaultLifecycleContainerAndDir(container string, dir string, lifecycles Pi
 	}
 }
 
-func defaultContainerAroundSteps(container string, steps []*syntax.Step) []*syntax.Step {
+func defaultContainerAroundSteps(container string, steps []*tekton.Step) []*tekton.Step {
 	if container == "" {
 		return steps
 	}
-	var containerStep *syntax.Step
-	result := []*syntax.Step{}
+	var containerStep *tekton.Step
+	result := []*tekton.Step{}
 	for _, step := range steps {
 		if step.GetImage() != "" {
 			result = append(result, step)
 		} else {
 			if containerStep == nil {
-				containerStep = &syntax.Step{
+				containerStep = &tekton.Step{
 					Image: container,
 				}
 				result = append(result, containerStep)
@@ -455,12 +455,12 @@ func defaultContainerAroundSteps(container string, steps []*syntax.Step) []*synt
 	return result
 }
 
-func defaultDirAroundSteps(dir string, steps []*syntax.Step) []*syntax.Step {
+func defaultDirAroundSteps(dir string, steps []*tekton.Step) []*tekton.Step {
 	if dir == "" {
 		return steps
 	}
-	var dirStep *syntax.Step
-	result := []*syntax.Step{}
+	var dirStep *tekton.Step
+	result := []*tekton.Step{}
 	for _, step := range steps {
 		if step.GetImage() != "" {
 			step.Steps = defaultDirAroundSteps(dir, step.Steps)
@@ -469,7 +469,7 @@ func defaultDirAroundSteps(dir string, steps []*syntax.Step) []*syntax.Step {
 			result = append(result, step)
 		} else {
 			if dirStep == nil {
-				dirStep = &syntax.Step{
+				dirStep = &tekton.Step{
 					Dir: dir,
 				}
 				result = append(result, dirStep)
@@ -574,7 +574,7 @@ func (c *PipelineConfig) PopulatePipelinesFromDefault() {
 }
 
 // clearContainerAndLabel wipes the label and container from an Agent, preserving the Dir if it exists.
-func clearContainerAndLabel(agent *syntax.Agent) *syntax.Agent {
+func clearContainerAndLabel(agent *tekton.Agent) *tekton.Agent {
 	if agent != nil {
 		agent.Container = ""
 		agent.Image = ""
@@ -582,7 +582,7 @@ func clearContainerAndLabel(agent *syntax.Agent) *syntax.Agent {
 
 		return agent
 	}
-	return &syntax.Agent{}
+	return &tekton.Agent{}
 }
 
 // IsEmpty returns true if this configuration is empty
@@ -607,10 +607,10 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 		base.Agent = clearContainerAndLabel(base.Agent)
 	} else {
 		if c.Agent == nil {
-			c.Agent = &syntax.Agent{}
+			c.Agent = &tekton.Agent{}
 		}
 		if base.Agent == nil {
-			base.Agent = &syntax.Agent{}
+			base.Agent = &tekton.Agent{}
 		}
 		if c.Agent.Label == "" {
 			c.Agent.Label = base.Agent.Label
@@ -628,7 +628,7 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 	} else if base.Agent.Dir == "" && c.Agent.Dir != "" {
 		base.Agent.Dir = c.Agent.Dir
 	}
-	mergedContainer, err := syntax.MergeContainers(base.ContainerOptions, c.ContainerOptions)
+	mergedContainer, err := tekton.MergeContainers(base.ContainerOptions, c.ContainerOptions)
 	if err != nil {
 		return err
 	}
@@ -666,7 +666,7 @@ func (c *PipelineConfig) GetAllEnvVars() map[string]string {
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
-func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, overrides []*syntax.PipelineOverride) *PipelineLifecycles {
+func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, overrides []*tekton.PipelineOverride) *PipelineLifecycles {
 	if base == nil {
 		return parent
 	}
@@ -693,14 +693,14 @@ func ExtendPipelines(pipelineName string, parent, base *PipelineLifecycles, over
 				return &PipelineLifecycles{}
 			}
 
-			l.Pipeline = syntax.ExtendParsedPipeline(l.Pipeline, override)
+			l.Pipeline = tekton.ExtendParsedPipeline(l.Pipeline, override)
 		}
 	}
 	return l
 }
 
 // ExtendLifecycle extends the lifecycle with the inherited base lifecycle
-func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*syntax.PipelineOverride) *PipelineLifecycle {
+func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*tekton.PipelineOverride) *PipelineLifecycle {
 	var lifecycle *PipelineLifecycle
 	if parent == nil {
 		lifecycle = base
@@ -709,7 +709,7 @@ func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, 
 	} else if parent.Replace {
 		lifecycle = parent
 	} else {
-		steps := []*syntax.Step{}
+		steps := []*tekton.Step{}
 		steps = append(steps, parent.PreSteps...)
 		steps = append(steps, base.Steps...)
 		steps = append(steps, parent.Steps...)
@@ -721,12 +721,12 @@ func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, 
 	if lifecycle != nil {
 		for _, override := range overrides {
 			if override.MatchesPipeline(pipelineName) && override.MatchesStage(stageName) {
-				overriddenSteps := []*syntax.Step{}
+				overriddenSteps := []*tekton.Step{}
 
 				// If a step name is specified on this override, override looking for that step.
 				if override.Name != "" {
 					for _, s := range lifecycle.Steps {
-						for _, o := range syntax.OverrideStep(*s, override) {
+						for _, o := range tekton.OverrideStep(*s, override) {
 							overriddenSteps = append(overriddenSteps, &o)
 						}
 					}
@@ -734,12 +734,12 @@ func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, 
 					// If no step name was specified but there are steps, just replace all steps in the stage/lifecycle,
 					// or add the new steps before/after the existing steps in the stage/lifecycle
 					if steps := override.AsStepsSlice(); len(steps) > 0 {
-						if override.Type == nil || *override.Type == syntax.StepOverrideReplace {
+						if override.Type == nil || *override.Type == tekton.StepOverrideReplace {
 							overriddenSteps = append(overriddenSteps, steps...)
-						} else if *override.Type == syntax.StepOverrideBefore {
+						} else if *override.Type == tekton.StepOverrideBefore {
 							overriddenSteps = append(overriddenSteps, steps...)
 							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
-						} else if *override.Type == syntax.StepOverrideAfter {
+						} else if *override.Type == tekton.StepOverrideAfter {
 							overriddenSteps = append(overriddenSteps, lifecycle.Steps...)
 							overriddenSteps = append(overriddenSteps, override.Steps...)
 						}
@@ -798,9 +798,9 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	return nil
 }
 
-// createPipelineSteps translates a step into one or more steps that can be used in jenkins-x.yml pipeline syntax.
-func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath string, args CreatePipelineArguments) ([]syntax.Step, int) {
-	steps := []syntax.Step{}
+// createPipelineSteps translates a step into one or more steps that can be used in jenkins-x.yml pipeline tekton.
+func (c *PipelineConfig) createPipelineSteps(step *tekton.Step, prefixPath string, args CreatePipelineArguments) ([]tekton.Step, int) {
+	steps := []tekton.Step{}
 
 	containerName := c.Agent.GetImage()
 
@@ -834,7 +834,7 @@ func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath strin
 			log.Logger().Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s", containerName)
 		}
 
-		s := syntax.Step{}
+		s := tekton.Step{}
 		args.StepCounter++
 		prefix := prefixPath
 		if prefix != "" {
@@ -875,7 +875,7 @@ func (c *PipelineConfig) createPipelineSteps(step *syntax.Step, prefixPath strin
 
 // replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
 // and replace any use of the VERSION file with using the VERSION env var
-func replaceCommandText(step *syntax.Step) string {
+func replaceCommandText(step *tekton.Step) string {
 	answer := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
 	// lets replace the old way of setting versions
@@ -889,7 +889,7 @@ func replaceCommandText(step *syntax.Step) string {
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, dockerRegistry, dockerRegistryOrg, appName, projectID, kanikoImage string, useKaniko bool) syntax.Step {
+func (c *PipelineConfig) modifyStep(parsedStep tekton.Step, workspaceDir, dockerRegistry, dockerRegistryOrg, appName, projectID, kanikoImage string, useKaniko bool) tekton.Step {
 	if useKaniko {
 		if strings.HasPrefix(parsedStep.GetCommand(), "skaffold build") ||
 			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) ||
@@ -924,7 +924,7 @@ func (c *PipelineConfig) modifyStep(parsedStep syntax.Step, workspaceDir, docker
 }
 
 // createStageForBuildPack generates the Task for a build pack
-func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (*syntax.Stage, int, error) {
+func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (*tekton.Stage, int, error) {
 	if args.Lifecycles == nil {
 		return nil, args.StepCounter, errors.New("generatePipeline: no lifecycles")
 	}
@@ -938,7 +938,7 @@ func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (
 		container = args.DefaultImage
 	}
 
-	steps := []syntax.Step{}
+	steps := []tekton.Step{}
 	for _, n := range args.Lifecycles.All() {
 		l := n.Lifecycle
 		if l == nil {
@@ -955,9 +955,9 @@ func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (
 		}
 	}
 
-	stage := &syntax.Stage{
-		Name: syntax.DefaultStageNameForBuildPack,
-		Agent: &syntax.Agent{
+	stage := &tekton.Stage{
+		Name: tekton.DefaultStageNameForBuildPack,
+		Agent: &tekton.Agent{
 			Image: container,
 		},
 		Steps: steps,
@@ -967,7 +967,7 @@ func (c *PipelineConfig) createStageForBuildPack(args CreatePipelineArguments) (
 }
 
 // CreatePipelineForBuildPack translates a set of lifecycles into a full pipeline.
-func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments) (*syntax.ParsedPipeline, int, error) {
+func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments) (*tekton.ParsedPipeline, int, error) {
 	args.GitOrg = naming.ToValidName(strings.ToLower(args.GitOrg))
 	args.GitName = naming.ToValidName(strings.ToLower(args.GitName))
 	args.DockerRegistryOrg = strings.ToLower(args.DockerRegistryOrg)
@@ -977,8 +977,8 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 		return nil, args.StepCounter, errors.Wrapf(err, "Failed to generate stage from build pack")
 	}
 
-	parsed := &syntax.ParsedPipeline{
-		Stages: []syntax.Stage{*stage},
+	parsed := &tekton.ParsedPipeline{
+		Stages: []tekton.Stage{*stage},
 	}
 
 	// If agent.container is specified, use that for default container configuration for step images.
@@ -996,7 +996,7 @@ func (c *PipelineConfig) CreatePipelineForBuildPack(args CreatePipelineArguments
 				container.Stdin = false
 				container.TTY = false
 				if parsed.Options == nil {
-					parsed.Options = &syntax.RootOptions{}
+					parsed.Options = &tekton.RootOptions{}
 				}
 				parsed.Options.ContainerOptions = &container
 			}

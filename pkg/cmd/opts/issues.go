@@ -2,11 +2,11 @@ package opts
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
 
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"

@@ -5,9 +5,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"

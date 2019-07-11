@@ -3,6 +3,7 @@ package syntax
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"

@@ -1,12 +1,12 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

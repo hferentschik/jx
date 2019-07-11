@@ -1,6 +1,8 @@
 package syntax_test
 
 import (
+	"github.com/jenkins-x/jx/api/jenkinsfile"
+	tektonapi "github.com/jenkins-x/jx/api/tekton"
 	"io/ioutil"
 	"os"
 	"path"
@@ -9,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+	sht "github.com/jenkins-x/jx/api/tekton/syntax_helpers_test"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
@@ -16,11 +19,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	jxsyntax "github.com/jenkins-x/jx/pkg/tekton/syntax"
-	sht "github.com/jenkins-x/jx/pkg/tekton/syntax/syntax_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
@@ -33,8 +33,8 @@ import (
 )
 
 var (
-	overrideAfter  = jxsyntax.StepOverrideAfter
-	overrideBefore = jxsyntax.StepOverrideBefore
+	overrideAfter  = tektonapi.StepOverrideAfter
+	overrideBefore = tektonapi.StepOverrideBefore
 )
 
 func TestCreateCanonicalPipeline(t *testing.T) {
@@ -74,7 +74,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		branch:       "build-pack",
 		expected: &config.ProjectConfig{
 			PipelineConfig: &jenkinsfile.PipelineConfig{
-				Agent: &jxsyntax.Agent{
+				Agent: &tektonapi.Agent{
 					Container: "nodejs",
 					Label:     "jenkins-nodejs",
 				},
@@ -85,8 +85,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 				},
 				Pipelines: jenkinsfile.Pipelines{
 					Post: &jenkinsfile.PipelineLifecycle{
-						Steps:    []*jxsyntax.Step{},
-						PreSteps: []*jxsyntax.Step{},
+						Steps:    []*tektonapi.Step{},
+						PreSteps: []*tektonapi.Step{},
 					},
 					PullRequest: &jenkinsfile.PipelineLifecycles{
 						Pipeline: sht.ParsedPipeline(
@@ -120,7 +120,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
 									sht.StepImage("nodejs"), sht.StepName("build-step3")),
 								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
-									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepImage(tektonapi.KanikoDockerImage), sht.StepName("build-container-build"),
 									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
 									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
 									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
@@ -168,7 +168,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 								sht.StageStep(sht.StepCmd("CI=true DISPLAY=:99 npm test"), sht.StepDir("/workspace/source"),
 									sht.StepImage("nodejs"), sht.StepName("build-npm-test")),
 								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
-									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepImage(tektonapi.KanikoDockerImage), sht.StepName("build-container-build"),
 									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
 									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
 									sht.StepArg("--destination=gcr.io/abayer/js-test-repo:${inputs.params.version}"),
@@ -197,7 +197,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		branch:       "master",
 		expected: &config.ProjectConfig{
 			PipelineConfig: &jenkinsfile.PipelineConfig{
-				Agent: &jxsyntax.Agent{
+				Agent: &tektonapi.Agent{
 					Container: "go",
 					Label:     "builder-go",
 				},
@@ -248,7 +248,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		branch:       "master",
 		expected: &config.ProjectConfig{
 			PipelineConfig: &jenkinsfile.PipelineConfig{
-				Agent: &jxsyntax.Agent{
+				Agent: &tektonapi.Agent{
 					Image: "go",
 					Label: "builder-go",
 				},
@@ -304,7 +304,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 		branch:       "master",
 		expected: &config.ProjectConfig{
 			PipelineConfig: &jenkinsfile.PipelineConfig{
-				Agent: &jxsyntax.Agent{
+				Agent: &tektonapi.Agent{
 					Image: "maven",
 					Label: "jenkins-maven",
 				},
@@ -316,17 +316,17 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 					Value: "somebodyelse",
 				}},
 				Pipelines: jenkinsfile.Pipelines{
-					Overrides: []*jxsyntax.PipelineOverride{{
+					Overrides: []*tektonapi.PipelineOverride{{
 						Pipeline: "release",
 						Stage:    "build",
-						Steps: []*jxsyntax.Step{{
+						Steps: []*tektonapi.Step{{
 							Sh: "echo hi there",
 						}},
 						Type: &overrideBefore,
 					}, {
 						Pipeline: "release",
 						Stage:    "build",
-						Steps: []*jxsyntax.Step{{
+						Steps: []*tektonapi.Step{{
 							Sh: "echo goodbye",
 						}, {
 							Sh: "echo wait why am i here",
@@ -334,8 +334,8 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 						Type: &overrideAfter,
 					}},
 					Post: &jenkinsfile.PipelineLifecycle{
-						Steps:    []*jxsyntax.Step{},
-						PreSteps: []*jxsyntax.Step{},
+						Steps:    []*tektonapi.Step{},
+						PreSteps: []*tektonapi.Step{},
 					},
 					PullRequest: &jenkinsfile.PipelineLifecycles{
 						Pipeline: sht.ParsedPipeline(
@@ -375,7 +375,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 								sht.StageStep(sht.StepCmd("skaffold version"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
 									sht.StepName("build-skaffold-version")),
 								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
-									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepImage(tektonapi.KanikoDockerImage), sht.StepName("build-container-build"),
 									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
 									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
 									sht.StepArg("--destination=gcr.io/abayer/jx-demo-qs:${inputs.params.version}"),
@@ -429,7 +429,7 @@ func TestCreateCanonicalPipeline(t *testing.T) {
 								sht.StageStep(sht.StepCmd("skaffold version"), sht.StepImage("maven"), sht.StepDir("/workspace/source"),
 									sht.StepName("build-skaffold-version")),
 								sht.StageStep(sht.StepCmd("/kaniko/executor"), sht.StepDir("/workspace/source"),
-									sht.StepImage(jxsyntax.KanikoDockerImage), sht.StepName("build-container-build"),
+									sht.StepImage(tektonapi.KanikoDockerImage), sht.StepName("build-container-build"),
 									sht.StepArg("--cache=true"), sht.StepArg("--cache-dir=/workspace"),
 									sht.StepArg("--context=/workspace/source"), sht.StepArg("--dockerfile=/workspace/source/Dockerfile"),
 									sht.StepArg("--destination=gcr.io/abayer/jx-demo-qs:${inputs.params.version}"),

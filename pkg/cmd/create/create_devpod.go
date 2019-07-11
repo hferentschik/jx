@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"

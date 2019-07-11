@@ -2,13 +2,14 @@ package boot
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	pkgconfig "github.com/jenkins-x/jx/pkg/config"
 	"os"
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/namespace"
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -151,7 +152,7 @@ func (o *BootOptions) Run() error {
 		}
 	}
 
-	requirements, requirementsFile, err := config.LoadRequirementsConfig(o.Dir)
+	requirements, requirementsFile, err := pkgconfig.LoadRequirementsConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -202,21 +203,21 @@ func (o *BootOptions) Run() error {
 	return nil
 }
 
-func (o *BootOptions) verifyRequirements(requirements *config.RequirementsConfig, requirementsFile string) error {
+func (o *BootOptions) verifyRequirements(requirements *pkgconfig.RequirementsConfig, requirementsFile string) error {
 	provider := requirements.Cluster.Provider
 	if provider == "" {
-		return config.MissingRequirement("provider", requirementsFile)
+		return pkgconfig.MissingRequirement("provider", requirementsFile)
 	}
 	if provider == "" {
 		if requirements.Cluster.ProjectID == "" {
-			return config.MissingRequirement("project", requirementsFile)
+			return pkgconfig.MissingRequirement("project", requirementsFile)
 		}
 	}
 	return nil
 }
 
 // FindBootNamespace finds the namespace to boot Jenkins X into based on the pipeline and requirements
-func FindBootNamespace(projectConfig *config.ProjectConfig, requirementsConfig *config.RequirementsConfig) string {
+func FindBootNamespace(projectConfig *config.ProjectConfig, requirementsConfig *pkgconfig.RequirementsConfig) string {
 	// TODO should we add the deploy namepace to jx-requirements.yml?
 	if projectConfig != nil {
 		pipelineConfig := projectConfig.PipelineConfig

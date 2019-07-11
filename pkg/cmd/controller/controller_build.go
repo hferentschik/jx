@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	tektonapi "github.com/jenkins-x/jx/api/tekton"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
@@ -15,7 +16,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
@@ -249,7 +249,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 	}
 	if pod != nil {
 		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
-			if pod.Labels[syntax.LabelStageName] != "" {
+			if pod.Labels[tektonapi.LabelStageName] != "" {
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
 				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
 				if err != nil {

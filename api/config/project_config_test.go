@@ -1,12 +1,12 @@
 package config_test
 
 import (
+	"github.com/jenkins-x/jx/api/config"
+	"github.com/jenkins-x/jx/api/tekton"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -31,7 +31,7 @@ var (
 			Pipelines: jenkinsfile.Pipelines{
 				PullRequest: &jenkinsfile.PipelineLifecycles{
 					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*syntax.Step{
+						Steps: []*tekton.Step{
 							{
 								Command: "mvn test",
 							},
@@ -40,7 +40,7 @@ var (
 				},
 				Release: &jenkinsfile.PipelineLifecycles{
 					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*syntax.Step{
+						Steps: []*tekton.Step{
 							{
 								Command: "mvn test",
 							},
@@ -52,7 +52,7 @@ var (
 							},
 						},
 					},
-					Pipeline: &syntax.ParsedPipeline{},
+					Pipeline: &tekton.ParsedPipeline{},
 				},
 			},
 			Env: []corev1.EnvVar{

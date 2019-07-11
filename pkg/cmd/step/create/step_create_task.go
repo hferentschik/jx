@@ -2,6 +2,7 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -15,18 +16,17 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
+	tektonapi "github.com/jenkins-x/jx/api/tekton"
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	syntaxstep "github.com/jenkins-x/jx/pkg/cmd/step/syntax"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -190,11 +190,11 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
-	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
+	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", tektonapi.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
 	cmd.Flags().BoolVarP(&o.DeleteTempDir, "delete-temp-dir", "", true, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&o.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().BoolVarP(&o.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
-	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", syntax.KanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", tektonapi.KanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&o.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
 	cmd.Flags().StringVarP(&o.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
 	cmd.Flags().StringVarP(&o.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
@@ -375,7 +375,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 	if o.DefaultImage == "" {
-		o.DefaultImage = syntax.DefaultContainerImage
+		o.DefaultImage = tektonapi.DefaultContainerImage
 	}
 	log.Logger().Debugf("cloning git for %s", o.CloneGitURL)
 	if o.VersionResolver == nil {
@@ -385,7 +385,7 @@ func (o *StepCreateTaskOptions) createEffectiveProjectConfigFromOptions(tektonCl
 		}
 	}
 	if o.KanikoImage == "" {
-		o.KanikoImage = syntax.KanikoDockerImage
+		o.KanikoImage = tektonapi.KanikoDockerImage
 	}
 	o.KanikoImage, err = o.VersionResolver.ResolveDockerImage(o.KanikoImage)
 	if err != nil {
@@ -653,7 +653,7 @@ func (o *StepCreateTaskOptions) enhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 	pipeline.Spec.Params = o.createPipelineParams()
 
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = syntax.TektonAPIVersion
+		pipeline.APIVersion = tektonapi.TektonAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
@@ -1160,7 +1160,7 @@ func (o *StepCreateTaskOptions) setBuildVersion(pipelineConfig *jenkinsfile.Pipe
 			}
 			// lets create a default set version pipeline
 			sv = &jenkinsfile.PipelineLifecycle{
-				Steps: []*syntax.Step{
+				Steps: []*tektonapi.Step{
 					{
 						Command: command,
 						Name:    "next-version",
@@ -1227,7 +1227,7 @@ func hasPipelineParam(params []pipelineapi.Param, name string) bool {
 	return false
 }
 
-func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
+func (o *StepCreateTaskOptions) runStepCommand(step *tektonapi.Step) error {
 	c := step.GetFullCommand()
 	if c == "" {
 		return nil
@@ -1251,7 +1251,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
 	return nil
 }
 
-func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
+func (o *StepCreateTaskOptions) invokeSteps(steps []*tektonapi.Step) error {
 	for _, s := range steps {
 		if s == nil {
 			continue

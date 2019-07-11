@@ -2,6 +2,7 @@ package tekton
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/tekton"
 	"regexp"
 	"sort"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
@@ -316,7 +316,7 @@ func (si *StageInfo) SetPodsForStageInfo(podList *corev1.PodList, prName string)
 	var podListItems []corev1.Pod
 
 	for _, p := range podList.Items {
-		if p.Labels[syntax.LabelStageName] == syntax.MangleToRfc1035Label(si.Name, "") && p.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] == prName {
+		if p.Labels[tekton.LabelStageName] == tekton.MangleToRfc1035Label(si.Name, "") && p.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] == prName {
 			podListItems = append(podListItems, p)
 		}
 	}

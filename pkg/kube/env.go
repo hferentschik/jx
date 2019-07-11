@@ -2,6 +2,8 @@ package kube
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	pgkconfig "github.com/jenkins-x/jx/pkg/config"
 	"io"
 	"io/ioutil"
 	"os/user"
@@ -10,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -18,7 +20,6 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -38,7 +39,7 @@ type ResolveChartMuseumURLFn func() (string, error)
 // from the CLI
 func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment,
 	config *v1.Environment, update bool, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
-	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+	gitRepoOptions *gits.GitRepositoryOptions, helmValues pgkconfig.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	name := data.Name
 	createMode := name == ""
@@ -269,7 +270,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 }
 
 // CreateEnvGitRepository creates the git repository for the given Environment
-func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
+func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues pgkconfig.HelmValuesConfig, prefix string, git gits.Gitter, chartMusemFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	var repo *gits.GitRepository
 	surveyOpts := survey.WithStdio(in, out, errOut)
@@ -360,7 +361,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 
 // DoCreateEnvironmentGitRepo actually creates the git repository for the environment
 func DoCreateEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, env *v1.Environment, forkEnvGitURL string,
-	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string,
+	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues pgkconfig.HelmValuesConfig, prefix string,
 	git gits.Gitter, chartMuseumFn ResolveChartMuseumURLFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, in, out, outErr)
@@ -648,7 +649,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 	return nil
 }
 
-func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gits.Gitter) error {
+func addValues(out io.Writer, dir string, values pgkconfig.HelmValuesConfig, git gits.Gitter) error {
 	file := filepath.Join(dir, "env", "values.yaml")
 	exists, err := util.FileExists(file)
 	if err != nil {

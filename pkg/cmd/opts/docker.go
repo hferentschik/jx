@@ -1,10 +1,10 @@
 package opts
 
 import (
+	"github.com/jenkins-x/jx/api/config"
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"

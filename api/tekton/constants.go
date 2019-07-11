@@ -1,4 +1,4 @@
-package syntax
+package tekton
 
 const (
 	// TektonAPIVersion the APIVersion for using Tekton

@@ -1,8 +1,8 @@
 package opts
 
 import (
+	"github.com/jenkins-x/jx/api/config"
 	"github.com/jenkins-x/jx/pkg/chats"
-	"github.com/jenkins-x/jx/pkg/config"
 )
 
 // CreateChatProvider creates a new chart provider from the given configuration

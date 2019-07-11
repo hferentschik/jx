@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
 	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"

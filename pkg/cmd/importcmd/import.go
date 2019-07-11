@@ -2,6 +2,7 @@ package importcmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
 	"github.com/jenkins-x/jx/pkg/log"

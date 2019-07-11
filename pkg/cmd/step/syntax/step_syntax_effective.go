@@ -3,21 +3,21 @@ package syntax
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	"github.com/jenkins-x/jx/api/tekton"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -104,10 +104,10 @@ func (o *StepSyntaxEffectiveOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
-	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
+	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", tekton.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
 	cmd.Flags().BoolVarP(&o.UseKaniko, "use-kaniko", "", true, "Enables using kaniko directly for building docker images")
 	cmd.Flags().BoolVarP(&o.ShortView, "short", "s", false, "Use short concise output")
-	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", syntax.KanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", tekton.KanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&o.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
 	cmd.Flags().StringVarP(&o.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&o.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
@@ -138,7 +138,7 @@ func (o *StepSyntaxEffectiveOptions) Run() error {
 		}
 	}
 	if o.DefaultImage == "" {
-		o.DefaultImage = syntax.DefaultContainerImage
+		o.DefaultImage = tekton.DefaultContainerImage
 	}
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("", "")
@@ -147,7 +147,7 @@ func (o *StepSyntaxEffectiveOptions) Run() error {
 		}
 	}
 	if o.KanikoImage == "" {
-		o.KanikoImage = syntax.KanikoDockerImage
+		o.KanikoImage = tekton.KanikoDockerImage
 	}
 	o.KanikoImage, err = o.VersionResolver.ResolveDockerImage(o.KanikoImage)
 	if err != nil {
@@ -331,7 +331,7 @@ func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, pr
 		if releaseLifecycles.Setup == nil {
 			releaseLifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
 		}
-		steps := []*syntax.Step{
+		steps := []*tekton.Step{
 			{
 				Command: "jx step git credentials",
 				Name:    "jx-git-credentials",
@@ -373,15 +373,15 @@ func (o *StepSyntaxEffectiveOptions) CreateEffectivePipeline(packsDir string, pr
 	return projectConfig, nil
 }
 
-func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycles *jenkinsfile.PipelineLifecycles, pipelines jenkinsfile.Pipelines, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig) (*syntax.ParsedPipeline, error) {
-	var parsed *syntax.ParsedPipeline
+func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycles *jenkinsfile.PipelineLifecycles, pipelines jenkinsfile.Pipelines, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig) (*tekton.ParsedPipeline, error) {
+	var parsed *tekton.ParsedPipeline
 	var err error
 
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
 		for _, override := range pipelines.Overrides {
 			if override.MatchesPipeline(kind) {
-				parsed = syntax.ExtendParsedPipeline(parsed, override)
+				parsed = tekton.ExtendParsedPipeline(parsed, override)
 			}
 		}
 	} else {
@@ -413,9 +413,9 @@ func (o *StepSyntaxEffectiveOptions) createPipelineForKind(kind string, lifecycl
 
 	if pipelineConfig.ContainerOptions != nil {
 		if parsed.Options == nil {
-			parsed.Options = &syntax.RootOptions{}
+			parsed.Options = &tekton.RootOptions{}
 		}
-		mergedContainer, err := syntax.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
+		mergedContainer, err := tekton.MergeContainers(pipelineConfig.ContainerOptions, parsed.Options.ContainerOptions)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Could not merge containerOptions from parent")
 		}
@@ -449,7 +449,7 @@ func (o *StepSyntaxEffectiveOptions) combineEnvVars(projectConfig *jenkinsfile.P
 		}
 		envMap[e.Name] = e
 	}
-	projectConfig.Env = syntax.EnvMapToSlice(envMap)
+	projectConfig.Env = tekton.EnvMapToSlice(envMap)
 	return nil
 }
 
@@ -491,7 +491,7 @@ func (o *StepSyntaxEffectiveOptions) makeConcisePipeline(projectConfig *config.P
 	return projectConfig
 }
 
-func (o *StepSyntaxEffectiveOptions) makeConciseStages(stages []syntax.Stage) {
+func (o *StepSyntaxEffectiveOptions) makeConciseStages(stages []tekton.Stage) {
 	for i := range stages {
 		stage := &stages[i]
 		for j := range stage.Steps {
@@ -500,7 +500,7 @@ func (o *StepSyntaxEffectiveOptions) makeConciseStages(stages []syntax.Stage) {
 	}
 }
 
-func (o *StepSyntaxEffectiveOptions) makeConciseStep(step *syntax.Step) {
+func (o *StepSyntaxEffectiveOptions) makeConciseStep(step *tekton.Step) {
 	for _, child := range step.Steps {
 		o.makeConciseStep(child)
 	}

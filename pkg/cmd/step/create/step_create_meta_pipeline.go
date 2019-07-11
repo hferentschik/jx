@@ -2,18 +2,18 @@ package create
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
+	tektonapi "github.com/jenkins-x/jx/api/tekton"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/metapipeline"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -105,7 +105,7 @@ func NewCmdCreateMetaPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVar(&options.PullRefs, pullRefOptionName, "", "The Prow pull ref specifying the references to merge into the source")
 	cmd.Flags().StringVarP(&options.Context, contextOptionName, "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 
-	cmd.Flags().StringVar(&options.DefaultImage, defaultImageOptionName, syntax.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step. Default "+syntax.DefaultContainerImage)
+	cmd.Flags().StringVar(&options.DefaultImage, defaultImageOptionName, tektonapi.DefaultContainerImage, "Specify the docker image to use if there is no image specified for a step. Default "+tektonapi.DefaultContainerImage)
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, labelOptionName, "l", nil, "List of custom labels to be applied to the generated PipelineRun (can be use multiple times)")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, envOptionName, "e", nil, "List of custom environment variables to be applied to resources that are created (can be use multiple times)")
 

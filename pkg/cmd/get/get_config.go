@@ -1,8 +1,8 @@
 package get
 
 import (
+	"github.com/jenkins-x/jx/api/config"
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"

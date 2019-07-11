@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
+	"github.com/jenkins-x/jx/api/tekton"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -132,8 +132,8 @@ func (c *ProjectConfig) GetOrCreatePipelineConfig() *jenkinsfile.PipelineConfig 
 }
 
 // GetPipeline retrieves the parsed pipeline for the specified type
-func (c *ProjectConfig) GetPipeline(kind string) (*syntax.ParsedPipeline, error) {
-	var parsed *syntax.ParsedPipeline
+func (c *ProjectConfig) GetPipeline(kind string) (*tekton.ParsedPipeline, error) {
+	var parsed *tekton.ParsedPipeline
 
 	if c.PipelineConfig == nil {
 		return nil, nil

@@ -1,16 +1,16 @@
 package create
 
 import (
+	"github.com/jenkins-x/jx/api/config"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
+	"github.com/jenkins-x/jx/api/tekton"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cmd/helper"
 
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -44,7 +44,7 @@ type NewStepDetails struct {
 	Pipeline  string
 	Lifecycle string
 	Mode      string
-	Step      syntax.Step
+	Step      tekton.Step
 }
 
 // AddToPipeline adds the step to the given pipeline configuration

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -23,7 +24,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/create"
 	"github.com/jenkins-x/jx/pkg/cmd/step/git"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	jxclient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"

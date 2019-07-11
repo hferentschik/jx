@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	tektonapi "github.com/jenkins-x/jx/api/tekton"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -11,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -100,22 +100,22 @@ func GetExtendingApps(jxClient versioned.Interface, namespace string) ([]jenkins
 }
 
 // createPipeline builds the parsed/typed pipeline which servers as input for the Tekton CRD creation.
-func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error) {
+func createPipeline(params CRDCreationParameters) (*tektonapi.ParsedPipeline, error) {
 	steps, err := buildSteps(params)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create app extending pipeline steps")
 	}
 
-	stage := syntax.Stage{
+	stage := tektonapi.Stage{
 		Name:  appExtensionStageName,
 		Steps: steps,
-		Agent: &syntax.Agent{
+		Agent: &tektonapi.Agent{
 			Image: determineDefaultStepImage(params.DefaultImage),
 		},
 	}
 
-	parsedPipeline := &syntax.ParsedPipeline{
-		Stages: []syntax.Stage{stage},
+	parsedPipeline := &tektonapi.ParsedPipeline{
+		Stages: []tektonapi.Stage{stage},
 	}
 
 	env := buildEnvParams(params)
@@ -130,8 +130,8 @@ func createPipeline(params CRDCreationParameters) (*syntax.ParsedPipeline, error
 // 2) create the effective pipeline and write it to disk
 // 3) one step for each extending app
 // 4) create Tekton CRDs for the meta pipeline
-func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
-	var steps []syntax.Step
+func buildSteps(params CRDCreationParameters) ([]tektonapi.Step, error) {
+	var steps []tektonapi.Step
 
 	// 1)
 	step := stepMergePullRefs(params.PullRef)
@@ -150,7 +150,7 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 		}
 
 		extension := app.Spec.PipelineExtension
-		step := syntax.Step{
+		step := tektonapi.Step{
 			Name:      extension.Name,
 			Image:     extension.Image,
 			Command:   extension.Command,
@@ -168,7 +168,7 @@ func buildSteps(params CRDCreationParameters) ([]syntax.Step, error) {
 	return steps, nil
 }
 
-func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
+func stepMergePullRefs(pullRefs prow.PullRefs) tektonapi.Step {
 	// we only need to run the merge step in case there is anything to merge
 	// Tekton has at this stage the base branch already checked out
 	if len(pullRefs.ToMerge) == 0 {
@@ -180,7 +180,7 @@ func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
 		args = append(args, "--sha", mergeSha)
 	}
 
-	step := syntax.Step{
+	step := tektonapi.Step{
 		Name:      mergePullRefsStepName,
 		Comment:   "Pipeline step merging pull refs",
 		Command:   "jx step git merge",
@@ -189,13 +189,13 @@ func stepMergePullRefs(pullRefs prow.PullRefs) syntax.Step {
 	return step
 }
 
-func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
+func stepEffectivePipeline(params CRDCreationParameters) tektonapi.Step {
 	args := []string{"--output-dir", "."}
 	if params.Context != "" {
 		args = append(args, "--context", params.Context)
 	}
 
-	step := syntax.Step{
+	step := tektonapi.Step{
 		Name:      createEffectivePipelineStepName,
 		Comment:   "Pipeline step creating the effective pipeline configuration",
 		Command:   "jx step syntax effective",
@@ -204,7 +204,7 @@ func stepEffectivePipeline(params CRDCreationParameters) syntax.Step {
 	return step
 }
 
-func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
+func stepCreateTektonCRDs(params CRDCreationParameters) tektonapi.Step {
 	args := []string{"--clone-dir", filepath.Join(tektonBaseDir, params.SourceDir)}
 	args = append(args, "--kind", params.PipelineKind)
 	for prID := range params.PullRef.ToMerge {
@@ -226,7 +226,7 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	for _, e := range params.EnvVars {
 		args = append(args, "--env", e)
 	}
-	step := syntax.Step{
+	step := tektonapi.Step{
 		Name:      createTektonCRDsStepName,
 		Comment:   "Pipeline step to create the Tekton CRDs for the actual pipeline run",
 		Command:   "jx step create task",
@@ -235,9 +235,9 @@ func stepCreateTektonCRDs(params CRDCreationParameters) syntax.Step {
 	return step
 }
 
-func stepSkip(stepName string, msg string) syntax.Step {
+func stepSkip(stepName string, msg string) tektonapi.Step {
 	skipMsg := fmt.Sprintf("SKIP %s: %s", stepName, msg)
-	step := syntax.Step{
+	step := tektonapi.Step{
 		Name:      stepName,
 		Comment:   skipMsg,
 		Command:   "echo",
@@ -251,7 +251,7 @@ func determineDefaultStepImage(defaultImage string) string {
 		return defaultImage
 	}
 
-	return syntax.DefaultContainerImage
+	return tektonapi.DefaultContainerImage
 }
 
 func buildEnvParams(params CRDCreationParameters) []corev1.EnvVar {

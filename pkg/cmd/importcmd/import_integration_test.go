@@ -3,6 +3,7 @@
 package importcmd_test
 
 import (
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/cmd/importcmd"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 	"github.com/jenkins-x/jx/pkg/kube/naming"
@@ -18,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
 

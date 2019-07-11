@@ -2,6 +2,8 @@ package preview
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/api/config"
+	pkgconfig "github.com/jenkins-x/jx/pkg/config"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -28,7 +30,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -97,14 +98,14 @@ type PreviewOptions struct {
 	PostPreviewJobTimeoutDuration time.Duration
 	PostPreviewJobPollDuration    time.Duration
 
-	HelmValuesConfig config.HelmValuesConfig
+	HelmValuesConfig pkgconfig.HelmValuesConfig
 }
 
 // NewCmdPreview creates a command object for the "create" command
 func NewCmdPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &PreviewOptions{
-		HelmValuesConfig: config.HelmValuesConfig{
-			ExposeController: &config.ExposeController{},
+		HelmValuesConfig: pkgconfig.HelmValuesConfig{
+			ExposeController: &pkgconfig.ExposeController{},
 		},
 		PromoteOptions: promote.PromoteOptions{
 			CommonOptions: commonOpts,
@@ -866,7 +867,7 @@ func (o *PreviewOptions) DefaultValues(ns string, warnMissingName bool) error {
 }
 
 // GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
-func (o *PreviewOptions) GetPreviewValuesConfig(projectConfig *config.ProjectConfig, domain string) (*config.PreviewValuesConfig, error) {
+func (o *PreviewOptions) GetPreviewValuesConfig(projectConfig *config.ProjectConfig, domain string) (*pkgconfig.PreviewValuesConfig, error) {
 	repository, err := o.getImageName(projectConfig)
 	if err != nil {
 		return nil, err
@@ -878,14 +879,14 @@ func (o *PreviewOptions) GetPreviewValuesConfig(projectConfig *config.ProjectCon
 	}
 
 	if o.HelmValuesConfig.ExposeController == nil {
-		o.HelmValuesConfig.ExposeController = &config.ExposeController{}
+		o.HelmValuesConfig.ExposeController = &pkgconfig.ExposeController{}
 	}
 	o.HelmValuesConfig.ExposeController.Config.Domain = domain
 
-	values := config.PreviewValuesConfig{
+	values := pkgconfig.PreviewValuesConfig{
 		ExposeController: o.HelmValuesConfig.ExposeController,
-		Preview: &config.Preview{
-			Image: &config.Image{
+		Preview: &pkgconfig.Preview{
+			Image: &pkgconfig.Image{
 				Repository: repository,
 				Tag:        tag,
 			},

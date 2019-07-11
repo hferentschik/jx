@@ -1,4 +1,4 @@
-package syntax
+package tekton
 
 import (
 	"strings"

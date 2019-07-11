@@ -1,6 +1,7 @@
 package buildpack_test
 
 import (
+	"github.com/jenkins-x/jx/api/tekton"
 	"io/ioutil"
 	"os"
 	"path"
@@ -8,8 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/require"
 
@@ -90,16 +90,16 @@ func TestSavePipelineConfig(t *testing.T) {
 	file := filepath.Join(tempDir, "pipeline.yaml")
 
 	config := &jenkinsfile.PipelineConfig{
-		Agent: &syntax.Agent{
+		Agent: &tekton.Agent{
 			Label: "jenkins-maven",
 		},
 		Pipelines: jenkinsfile.Pipelines{
 			Release: &jenkinsfile.PipelineLifecycles{
 				Setup: &jenkinsfile.PipelineLifecycle{
-					Steps: []*syntax.Step{
+					Steps: []*tekton.Step{
 						{
 							Image: "maven",
-							Steps: []*syntax.Step{
+							Steps: []*tekton.Step{
 								{
 									Command: "mvn deploy",
 								},

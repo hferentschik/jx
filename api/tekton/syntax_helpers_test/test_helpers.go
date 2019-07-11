@@ -1,8 +1,8 @@
 package syntax_helpers_test
 
 import (
+	"github.com/jenkins-x/jx/api/tekton"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
@@ -108,29 +108,29 @@ func StructureStageParallel(stages ...string) PipelineStructureStageOp {
 }
 
 // PipelineOp is an operation on a ParsedPipeline
-type PipelineOp func(*syntax.ParsedPipeline)
+type PipelineOp func(*tekton.ParsedPipeline)
 
 // PipelineOptionsOp is an operation on RootOptions
-type PipelineOptionsOp func(*syntax.RootOptions)
+type PipelineOptionsOp func(*tekton.RootOptions)
 
 // PipelinePostOp is an operation on Post
-type PipelinePostOp func(*syntax.Post)
+type PipelinePostOp func(*tekton.Post)
 
 // StageOp is an operation on a Stage
-type StageOp func(*syntax.Stage)
+type StageOp func(*tekton.Stage)
 
 // StageOptionsOp is an operation on StageOptions
-type StageOptionsOp func(*syntax.StageOptions)
+type StageOptionsOp func(*tekton.StageOptions)
 
 // StepOp is an operation on a step
-type StepOp func(*syntax.Step)
+type StepOp func(*tekton.Step)
 
 // LoopOp is an operation on a Loop
-type LoopOp func(*syntax.Loop)
+type LoopOp func(*tekton.Loop)
 
 // ParsedPipeline creates a ParsedPipeline from the provided operations
-func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
-	s := &syntax.ParsedPipeline{}
+func ParsedPipeline(ops ...PipelineOp) *tekton.ParsedPipeline {
+	s := &tekton.ParsedPipeline{}
 
 	for _, op := range ops {
 		op(s)
@@ -141,8 +141,8 @@ func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
 
 // PipelineAgent sets the agent for the pipeline
 func PipelineAgent(image string) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Agent = &syntax.Agent{
+	return func(parsed *tekton.ParsedPipeline) {
+		parsed.Agent = &tekton.Agent{
 			Image: image,
 		}
 	}
@@ -150,8 +150,8 @@ func PipelineAgent(image string) PipelineOp {
 
 // PipelineOptions sets the RootOptions for the pipeline
 func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Options = &syntax.RootOptions{}
+	return func(parsed *tekton.ParsedPipeline) {
+		parsed.Options = &tekton.RootOptions{}
 
 		for _, op := range ops {
 			op(parsed.Options)
@@ -161,7 +161,7 @@ func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 
 // PipelineContainerOptions sets the containerOptions for the pipeline
 func PipelineContainerOptions(ops ...builder.ContainerOp) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
+	return func(options *tekton.RootOptions) {
 		options.ContainerOptions = &corev1.Container{}
 
 		for _, op := range ops {
@@ -172,9 +172,9 @@ func PipelineContainerOptions(ops ...builder.ContainerOp) PipelineOptionsOp {
 
 // StageContainerOptions sets the containerOptions for a stage
 func StageContainerOptions(ops ...builder.ContainerOp) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *tekton.StageOptions) {
 		if options.RootOptions == nil {
-			options.RootOptions = &syntax.RootOptions{}
+			options.RootOptions = &tekton.RootOptions{}
 		}
 		options.ContainerOptions = &corev1.Container{}
 
@@ -186,14 +186,14 @@ func StageContainerOptions(ops ...builder.ContainerOp) StageOptionsOp {
 
 // PipelineDir sets the default working directory for the pipeline
 func PipelineDir(dir string) PipelineOp {
-	return func(pipeline *syntax.ParsedPipeline) {
+	return func(pipeline *tekton.ParsedPipeline) {
 		pipeline.WorkingDir = &dir
 	}
 }
 
 // StageDir sets the default working directory for the stage
 func StageDir(dir string) StageOp {
-	return func(stage *syntax.Stage) {
+	return func(stage *tekton.Stage) {
 		stage.WorkingDir = &dir
 	}
 }
@@ -242,9 +242,9 @@ func EnvVarFrom(name string, source *corev1.EnvVarSource) builder.ContainerOp {
 }
 
 // PipelineOptionsTimeout sets the timeout for the pipeline
-func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
-		options.Timeout = &syntax.Timeout{
+func PipelineOptionsTimeout(time int64, unit tekton.TimeoutUnit) PipelineOptionsOp {
+	return func(options *tekton.RootOptions) {
+		options.Timeout = &tekton.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -253,14 +253,14 @@ func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptions
 
 // PipelineOptionsRetry sets the retry count for the pipeline
 func PipelineOptionsRetry(count int8) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
+	return func(options *tekton.RootOptions) {
 		options.Retry = count
 	}
 }
 
 // PipelineEnvVar add an environment variable, with specified name and value, to the pipeline.
 func PipelineEnvVar(name, value string) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
+	return func(parsed *tekton.ParsedPipeline) {
 		parsed.Env = append(parsed.GetEnv(), corev1.EnvVar{
 			Name:  name,
 			Value: value,
@@ -269,9 +269,9 @@ func PipelineEnvVar(name, value string) PipelineOp {
 }
 
 // PipelinePost adds a post condition to the pipeline
-func PipelinePost(condition syntax.PostCondition, ops ...PipelinePostOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		post := syntax.Post{
+func PipelinePost(condition tekton.PostCondition, ops ...PipelinePostOp) PipelineOp {
+	return func(parsed *tekton.ParsedPipeline) {
+		post := tekton.Post{
 			Condition: condition,
 		}
 
@@ -285,8 +285,8 @@ func PipelinePost(condition syntax.PostCondition, ops ...PipelinePostOp) Pipelin
 
 // PipelineStage adds a stage to the pipeline
 func PipelineStage(name string, ops ...StageOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		s := syntax.Stage{
+	return func(parsed *tekton.ParsedPipeline) {
+		s := tekton.Stage{
 			Name: name,
 		}
 
@@ -299,8 +299,8 @@ func PipelineStage(name string, ops ...StageOp) PipelineOp {
 
 // PostAction adds a post action to a post condition
 func PostAction(name string, options map[string]string) PipelinePostOp {
-	return func(post *syntax.Post) {
-		post.Actions = append(post.Actions, syntax.PostAction{
+	return func(post *tekton.Post) {
+		post.Actions = append(post.Actions, tekton.PostAction{
 			Name:    name,
 			Options: options,
 		})
@@ -309,8 +309,8 @@ func PostAction(name string, options map[string]string) PipelinePostOp {
 
 // StageAgent sets the image/agent for a stage
 func StageAgent(image string) StageOp {
-	return func(stage *syntax.Stage) {
-		stage.Agent = &syntax.Agent{
+	return func(stage *tekton.Stage) {
+		stage.Agent = &tekton.Agent{
 			Image: image,
 		}
 	}
@@ -318,8 +318,8 @@ func StageAgent(image string) StageOp {
 
 // StageOptions sets the StageOptions for a stage
 func StageOptions(ops ...StageOptionsOp) StageOp {
-	return func(stage *syntax.Stage) {
-		stage.Options = &syntax.StageOptions{}
+	return func(stage *tekton.Stage) {
+		stage.Options = &tekton.StageOptions{}
 
 		for _, op := range ops {
 			op(stage.Options)
@@ -328,12 +328,12 @@ func StageOptions(ops ...StageOptionsOp) StageOp {
 }
 
 // StageOptionsTimeout sets the timeout for a stage
-func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+func StageOptionsTimeout(time int64, unit tekton.TimeoutUnit) StageOptionsOp {
+	return func(options *tekton.StageOptions) {
 		if options.RootOptions == nil {
-			options.RootOptions = &syntax.RootOptions{}
+			options.RootOptions = &tekton.RootOptions{}
 		}
-		options.Timeout = &syntax.Timeout{
+		options.Timeout = &tekton.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -342,9 +342,9 @@ func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 
 // StageOptionsRetry sets the retry count for a stage
 func StageOptionsRetry(count int8) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *tekton.StageOptions) {
 		if options.RootOptions == nil {
-			options.RootOptions = &syntax.RootOptions{}
+			options.RootOptions = &tekton.RootOptions{}
 		}
 		options.Retry = count
 	}
@@ -352,15 +352,15 @@ func StageOptionsRetry(count int8) StageOptionsOp {
 
 // StageOptionsWorkspace sets the workspace for a stage
 func StageOptionsWorkspace(ws string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *tekton.StageOptions) {
 		options.Workspace = &ws
 	}
 }
 
 // StageOptionsStash adds a stash to the stage
 func StageOptionsStash(name, files string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
-		options.Stash = &syntax.Stash{
+	return func(options *tekton.StageOptions) {
+		options.Stash = &tekton.Stash{
 			Name:  name,
 			Files: files,
 		}
@@ -369,8 +369,8 @@ func StageOptionsStash(name, files string) StageOptionsOp {
 
 // StageOptionsUnstash adds an unstash to the stage
 func StageOptionsUnstash(name, dir string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
-		options.Unstash = &syntax.Unstash{
+	return func(options *tekton.StageOptions) {
+		options.Unstash = &tekton.Unstash{
 			Name: name,
 		}
 		if dir != "" {
@@ -381,7 +381,7 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 
 // StageEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
-	return func(stage *syntax.Stage) {
+	return func(stage *tekton.Stage) {
 		stage.Env = append(stage.GetEnv(), corev1.EnvVar{
 			Name:  name,
 			Value: value,
@@ -390,9 +390,9 @@ func StageEnvVar(name, value string) StageOp {
 }
 
 // StagePost adds a post condition to the stage
-func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
-	return func(stage *syntax.Stage) {
-		post := syntax.Post{
+func StagePost(condition tekton.PostCondition, ops ...PipelinePostOp) StageOp {
+	return func(stage *tekton.Stage) {
+		post := tekton.Post{
 			Condition: condition,
 		}
 
@@ -406,8 +406,8 @@ func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
 
 // StepAgent sets the agent for a step
 func StepAgent(image string) StepOp {
-	return func(step *syntax.Step) {
-		step.Agent = &syntax.Agent{
+	return func(step *tekton.Step) {
+		step.Agent = &tekton.Agent{
 			Image: image,
 		}
 	}
@@ -415,57 +415,57 @@ func StepAgent(image string) StepOp {
 
 // StepImage sets the image for a step
 func StepImage(image string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Image = image
 	}
 }
 
 // StepCmd sets the command for a step
 func StepCmd(cmd string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Command = cmd
 	}
 }
 
 // StepName sets the name for a step
 func StepName(name string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Name = name
 	}
 }
 
 // StepArg sets the arguments for a step
 func StepArg(arg string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Arguments = append(step.Arguments, arg)
 	}
 }
 
 // StepStep sets the alias step for a step
 func StepStep(s string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Step = s
 	}
 }
 
 // StepOptions sets the alias step options for a step
 func StepOptions(options map[string]string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Options = options
 	}
 }
 
 // StepDir sets the working dir for a step
 func StepDir(dir string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Dir = dir
 	}
 }
 
 // StepLoop adds a loop to the step
 func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
-	return func(step *syntax.Step) {
-		loop := &syntax.Loop{
+	return func(step *tekton.Step) {
+		loop := &tekton.Loop{
 			Variable: variable,
 			Values:   values,
 		}
@@ -480,7 +480,7 @@ func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 
 // StepEnvVar add an environment variable, with specified name and value, to the step.
 func StepEnvVar(name, value string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *tekton.Step) {
 		step.Env = append(step.Env, corev1.EnvVar{
 			Name:  name,
 			Value: value,
@@ -490,8 +490,8 @@ func StepEnvVar(name, value string) StepOp {
 
 // LoopStep adds a step to the loop
 func LoopStep(ops ...StepOp) LoopOp {
-	return func(loop *syntax.Loop) {
-		step := syntax.Step{}
+	return func(loop *tekton.Loop) {
+		step := tekton.Step{}
 
 		for _, op := range ops {
 			op(&step)
@@ -503,8 +503,8 @@ func LoopStep(ops ...StepOp) LoopOp {
 
 // StageStep adds a step to the stage
 func StageStep(ops ...StepOp) StageOp {
-	return func(stage *syntax.Stage) {
-		step := syntax.Step{}
+	return func(stage *tekton.Stage) {
+		step := tekton.Step{}
 
 		for _, op := range ops {
 			op(&step)
@@ -516,8 +516,8 @@ func StageStep(ops ...StepOp) StageOp {
 
 // StageParallel adds a nested parallel stage to the stage
 func StageParallel(name string, ops ...StageOp) StageOp {
-	return func(stage *syntax.Stage) {
-		n := syntax.Stage{Name: name}
+	return func(stage *tekton.Stage) {
+		n := tekton.Stage{Name: name}
 
 		for _, op := range ops {
 			op(&n)
@@ -529,8 +529,8 @@ func StageParallel(name string, ops ...StageOp) StageOp {
 
 // StageSequential adds a nested sequential stage to the stage
 func StageSequential(name string, ops ...StageOp) StageOp {
-	return func(stage *syntax.Stage) {
-		n := syntax.Stage{Name: name}
+	return func(stage *tekton.Stage) {
+		n := tekton.Stage{Name: name}
 
 		for _, op := range ops {
 			op(&n)
@@ -546,6 +546,6 @@ func TaskStageLabel(value string) builder.TaskOp {
 		if t.ObjectMeta.Labels == nil {
 			t.ObjectMeta.Labels = map[string]string{}
 		}
-		t.ObjectMeta.Labels[syntax.LabelStageName] = syntax.MangleToRfc1035Label(value, "")
+		t.ObjectMeta.Labels[tekton.LabelStageName] = tekton.MangleToRfc1035Label(value, "")
 	}
 }

@@ -12,11 +12,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/cmd/step/buildpack"
 	"github.com/jenkins-x/jx/pkg/cmd/testhelpers"
 
+	"github.com/jenkins-x/jx/api/jenkinsfile"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
