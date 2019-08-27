@@ -446,12 +446,12 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 			if "" != os.Getenv(config.RequirementEnvGitOwner) {
 				requirements.Cluster.EnvironmentGitOwner = os.Getenv(config.RequirementEnvGitOwner)
 			}
-			if "" != os.Getenv(config.RequirementEnvGitPrivate) {
-				privateEnvRepo := os.Getenv(config.RequirementEnvGitPrivate)
-				if privateEnvRepo == "true" {
-					requirements.Cluster.EnvironmentGitPrivate = true
+			if "" != os.Getenv(config.RequirementEnvGitPublic) {
+				publicEnvRepo := os.Getenv(config.RequirementEnvGitPublic)
+				if publicEnvRepo == "true" {
+					requirements.Cluster.EnvironmentGitPublic = true
 				} else {
-					requirements.Cluster.EnvironmentGitPrivate = false
+					requirements.Cluster.EnvironmentGitPublic = false
 				}
 			}
 			if "" != os.Getenv(config.RequirementExternalDNSServiceAccountName) {
@@ -611,12 +611,15 @@ func (o *StepVerifyPreInstallOptions) gatherRequirements(requirements *config.Re
 		requirements.Cluster.GitKind = "gitlab"
 	}
 
-	requirements.SaveConfig(requirementsFileName)
+	err = requirements.SaveConfig(requirementsFileName)
+	if err != nil {
+		return nil, errors.Wrap(err, "error saving requirements file")
+	}
 
-	if requirements.Cluster.EnvironmentGitPrivate {
-		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPrivate"), util.ColorInfo("false"))
+	if requirements.Cluster.EnvironmentGitPublic {
+		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("false"))
 	} else {
-		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s jx-requirements.yaml", util.ColorInfo("public"), util.ColorInfo("private"), util.ColorInfo("environmentGitPrivate"), util.ColorInfo("true"))
+		log.Logger().Infof("Will create %s environment repos, if you want to create %s environment repos, please set %s to %s in jx-requirements.yaml", util.ColorInfo("private"), util.ColorInfo("public"), util.ColorInfo("environmentGitPublic"), util.ColorInfo("true"))
 	}
 
 	return requirements, nil
