@@ -36,6 +36,7 @@ type StepBootVaultOptions struct {
 	Dir               string
 	ProviderValuesDir string
 	Namespace         string
+	LazyCreate        bool
 }
 
 var (
@@ -71,6 +72,7 @@ func NewCmdStepBootVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&o.Dir, "dir", "d", ".", fmt.Sprintf("the directory to look for the requirements file: %s", config.RequirementsConfigFileName))
 	cmd.Flags().StringVarP(&o.ProviderValuesDir, "provider-values-dir", "", "", "The optional directory of kubernetes provider specific files")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "the namespace that Jenkins X will be booted into. If not specified it defaults to $DEPLOY_NAMESPACE")
+	cmd.Flags().BoolVarP(&o.LazyCreate, "lazy-create", "", true, "Specify true/false as to whether to lazily create missing resources")
 
 	return cmd
 }
@@ -150,6 +152,7 @@ func (o *StepBootVaultOptions) Run() error {
 		CreateCloudResources: createCloudResources,
 		Boot:                 true,
 		BatchMode:            true,
+		AllowLazyCreation:    o.LazyCreate,
 	}
 
 	if provider == cloud.GKE {

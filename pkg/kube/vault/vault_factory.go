@@ -141,7 +141,7 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 
 	vlt, err := v.Selector.GetVault(name, namespace, useIngressURL)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", "", errors.Wrapf(err,"unable to find vault instance %s in namespace %s using ingress %t", name, namespace, useIngressURL)
 	}
 
 	if os.Getenv(vault.LocalVaultEnvVar) != "" && !useIngressURL {
@@ -149,6 +149,10 @@ func (v *VaultClientFactory) GetConfigData(name string, namespace string, useIng
 	}
 
 	serviceAccount, err := v.getServiceAccountFromVault(vlt)
+	if err != nil {
+		return nil, "", "", errors.Wrap(err, "unable to lookup service account")
+	}
+
 	token, err := serviceaccount.GetServiceAccountToken(v.kubeClient, namespace, serviceAccount.Name)
 	cfg := &api.Config{
 		Address:    vlt.URL,

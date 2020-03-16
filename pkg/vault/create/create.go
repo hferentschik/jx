@@ -2,6 +2,8 @@ package create
 
 import (
 	"fmt"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
@@ -37,6 +39,7 @@ type VaultCreationParam struct {
 	CreateCloudResources bool
 	Boot                 bool
 	BatchMode            bool
+	AllowLazyCreation    bool
 	VaultOperatorClient  versioned.Interface
 	KubeClient           kubernetes.Interface
 	VersionResolver      versionstream.VersionResolver
@@ -166,11 +169,20 @@ func (v *defaultVaultCreator) CreateOrUpdateVault(param VaultCreationParam) erro
 		return err
 	}
 
+	exists,err  := v.authServiceAccountExists(param.KubeClient, param.VaultName, param.ServiceAccountName, param.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "error checking for service account existence")
+	}
+
+	if !exists && !param.AllowLazyCreation {
+		return errors.Errorf("Vault service account %s does not exist and lazy creation is turned off", param.ServiceAccountName)
+	}
+
 	vaultAuthServiceAccount, err := v.createAuthServiceAccount(param.KubeClient, param.VaultName, param.ServiceAccountName, param.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
-	log.Logger().Debugf("Created service account '%s' for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
+	log.Logger().Debugf("Using service account '%s' for Vault authentication", util.ColorInfo(vaultAuthServiceAccount))
 
 	images, err := v.dockerImages(param.VersionResolver)
 	if err != nil {
@@ -212,6 +224,19 @@ func (v *defaultVaultCreator) dockerImages(resolver versionstream.VersionResolve
 		images[image] = version
 	}
 	return images, nil
+}
+
+func (v *defaultVaultCreator) authServiceAccountExists(client kubernetes.Interface, vaultName, serviceAccountName string, namespace string) (bool, error) {
+	_, err := client.CoreV1().ServiceAccounts(namespace).Get(serviceAccountName, metav1.GetOptions{})
+	if err == nil {
+		return true, nil
+	}
+
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return false, errors.Wrapf(err, "error retrieving service account %s", serviceAccountName)
 }
 
 // createAuthServiceAccount creates a Service Account for the Auth service for vault
@@ -288,6 +313,7 @@ func (v *defaultVaultCreator) vaultGKEConfig(vaultCRD *v1alpha1.Vault, param Vau
 	}
 
 	log.Logger().Debugf("Ensure KMS API is enabled")
+	// TODO cloud-resource
 	err = gcloud.EnableAPIs(param.GKE.ProjectID, "cloudkms")
 	if err != nil {
 		return vault.CloudProviderConfig{}, errors.Wrap(err, "unable to enable 'cloudkms' API")
@@ -307,11 +333,13 @@ func (v *defaultVaultCreator) vaultGKEConfig(vaultCRD *v1alpha1.Vault, param Vau
 	}
 	log.Logger().Debugf("KMS Key '%s' created in keying '%s'", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
-	vaultBucket, err := gkevault.CreateBucket(gcloud, vaultCRD.Name, param.GKE.BucketName, param.GKE.ProjectID, param.GKE.Zone, param.GKE.RecreateBucket, param.BatchMode, param.FileHandles)
-	if err != nil {
-		return vault.CloudProviderConfig{}, errors.Wrap(err, "creating Vault GCS data bucket")
-	}
-	log.Logger().Infof("GCS bucket '%s' was created for Vault backend", util.ColorInfo(vaultBucket))
+	vaultBucket := param.GKE.BucketName
+	// TODO cloud-resource
+	//vaultBucket, err := gkevault.CreateBucket(gcloud, vaultCRD.Name, param.GKE.BucketName, param.GKE.ProjectID, param.GKE.Zone, param.GKE.RecreateBucket, param.BatchMode, param.FileHandles)
+	//if err != nil {
+	//	return vault.CloudProviderConfig{}, errors.Wrap(err, "creating Vault GCS data bucket")
+	//}
+	log.Logger().Infof("Using GCS bucket '%s' for Vault backend", util.ColorInfo(vaultBucket))
 
 	gcpConfig := &vault.GCPConfig{
 		ProjectId:   param.GKE.ProjectID,
